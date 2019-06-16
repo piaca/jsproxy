@@ -122,8 +122,7 @@ for k, v in pairs(h) do
     -- 这些头有特殊意义，需要转义 --
     k == 'access-control-allow-origin' or
     k == 'access-control-expose-headers' or
-    k == 'location' or
-    k == 'set-cookie'
+    k == 'location'
   then
     if type(v) == 'table' then
       -- 重复的字段，例如 Set-Cookie
@@ -133,6 +132,18 @@ for k, v in pairs(h) do
       end
     else
       addHdr('--' .. k, v)
+    end
+    ngx.header[k] = nil
+
+  elseif k == 'set-cookie' then
+    if type(v) == 'table' then
+      -- 重复的 Set-Cookie 字段，转换成 1-Set-Cookie, 2-Set-Cookie, ...
+      for i = 1, #v do
+        addHdr(i .. '-' .. k, v[i])
+      end
+    else
+      -- 只有一个 Set-Cookie，转换成 1-Set-Cookie
+      addHdr('1-' .. k, v)
     end
     ngx.header[k] = nil
 
